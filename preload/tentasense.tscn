@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://scripts/Line2D.gd" type="Script" id=1]
+
+[node name="sense" type="RayCast2D"]
+enabled = true
+collision_mask = 2147483650
+
+[node name="Line2D" type="Line2D" parent="."]
+visible = false
+width = 1.0
+script = ExtResource( 1 )
