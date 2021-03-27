@@ -11,5 +11,5 @@ func _ready():
 
 func _process(delta):
 	tick = true if int(clock) == 1 else false
-	clock = fmod(clock,60)+2
+	clock = fmod(clock,60)+clockspeed*2
 	

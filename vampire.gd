@@ -4,6 +4,7 @@ var rng = RandomNumberGenerator.new()
 onready var tentacle = preload("res://preload/tentacle.tscn")
 onready var vars = get_node("/root/global")
 onready var floordetect = $floordetect
+onready var ceildetect = $ceildetect
 onready var head = $head
 var num_tent = 10
 var tentacles = []
@@ -14,10 +15,11 @@ var speed = 20
 var maxspeed = 300
 var lrdir = Input.get_action_strength("right")-Input.get_action_strength("left")
 var uddir = Input.get_action_strength("down")-Input.get_action_strength("up")
-var distance = 0
+var distance = 1
+var cdistance = 1
 var jumpcharge = 0
 var move = true
-var launchpos
+var launchpos = Vector2(0,0)
 var launched = false
 var launcht = 0
 var launchcooldown = 0
@@ -44,6 +46,7 @@ func _process(delta):
 	if Input.is_action_just_pressed("reload"):get_tree().change_scene(get_tree().current_scene.filename)
 	
 	if move: move()
+	ceilhover()
 	move_and_slide(velocity)
 
 	if Input.is_action_just_pressed("jump") and jumpclock == 0 and floordetect.is_colliding(): jumpclock = 100
@@ -51,33 +54,34 @@ func _process(delta):
 	
 	if floordetect.is_colliding():
 		distance = global_position.distance_to(floordetect.get_collision_point())
-	if distance > 80: 
-		vars.clock = stepify(vars.clock,6)
-		vars.clockspeed = 6
-	else: vars.clockspeed=1
+	if ceildetect.is_colliding():
+		cdistance = global_position.distance_to(ceildetect.get_collision_point())
 	
 	#launch 
-	if (Input.is_action_pressed("r2") and vars.senspoints != []) or launched:
-		if !launched: launchpos = global_position
-		launch()
-		launched = true
-	if Input.is_action_just_released("r2"):
-		launchpos = null
-		launched = false
-		maxspeed = 2300
-		launchcooldown = 20
-		if vars.senspoints != []: velocity = launchdir
-		launchdir = Vector2(0,0)
-	if launchcooldown>0: 
-		launchcooldown -= 1
-		#maxspeed -= 100
-		velocity = velocity * 0.95
-		velocity.y+=1
-	if launchcooldown == 0: 
-		maxspeed = 300
-		move = true
-	
-	
+	if true:
+		if Input.is_action_pressed("r2"): 
+			randmove([-1,1],[-1,1])
+		if (Input.is_action_pressed("r2") and vars.senspoints != []) or launched:
+			if !launched: launchpos = global_position
+			launch()
+			launched = true
+		if Input.is_action_just_released("r2"):
+			launchpos = Vector2(0,0)
+			maxspeed = 2300
+			launchcooldown = 20
+			if vars.senspoints != []: velocity = launchdir
+			launchdir = Vector2(0,0)
+		if launchcooldown>0: 
+			launchcooldown -= 1
+			#maxspeed -= 100
+			velocity = velocity * 0.95
+			velocity.y+=1
+		if launchcooldown == 1: 
+			launched = false
+		if launchcooldown == 0: 
+			maxspeed = 300
+			move = true
+		print(vars.clock, launched, cdistance)
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))*(speed/5)
 	velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
 	velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
@@ -105,7 +109,7 @@ func randmove(xrand,yrand):
 
 func randnearby():
 	rng.randomize()
-	if vars.senspoints == [] or !floordetect.is_colliding(): 
+	if vars.senspoints == [] and !launched: 
 		for i in tentacles:
 			i.snapHand(global_position)
 	var magnitude = 1
@@ -137,10 +141,20 @@ func randnearbynocool():
 
 func floorhover():
 	if floordetect.is_colliding() and jumpclock == 0:
-		velocity.y += (Input.get_action_strength("down")-Input.get_action_strength("up"))*10
-		rng.randomize()
+		velocity.y += (Input.get_action_strength("down")-Input.get_action_strength("up"))*100
 		velocity.y = velocity.y*0.8
 		velocity.y -= 50-distance
+		if distance < 50: velocity.y -= (100-distance)
+
+func ceilhover():
+	if ceildetect.is_colliding():
+		velocity.y += (Input.get_action_strength("down")-Input.get_action_strength("up"))*100
+		if cdistance < 50: velocity.y += (50-cdistance)
+		var multiplier = cdistance/100
+		print(multiplier)
+		multiplier = clamp(multiplier,0.5,1)
+		velocity.y = velocity.y*multiplier
+		velocity.y = velocity.y - cdistance/10
 
 func jump():
 	if jumpclock == 100: jumpcharge = 0.3
@@ -162,8 +176,8 @@ func jump():
 func move():
 	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
 	var moving = true if round(abs(velocity.x)) > 0 or round(abs(velocity.y)) > 0 else false
-	floorhover()
-	if moving: randnearby()
+	if launchcooldown == 0: floorhover()
+	if moving and !launched: randnearby()
 	velocity.x += lrdir*speed
 	velocity.y += 10
 
@@ -173,25 +187,11 @@ func respawn():
 func launch():
 	head.rotation = launchdir.angle()
 	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
+	launched = true
 	if vars.senspoints != []:
-		move = false
-		velocity = velocity*0
-		if !launched:
-			closest = global_position.distance_to(vars.senspoints[0])
-			closestpoint = Vector2(0,0)
-			randnearbynocool()
-			if false:
-				for i in vars.senspoints:
-					if global_position.distance_to(i) < closest: 
-						closest = global_position.distance_to(i)
-						closestpoint = i
-			var dir2close = (closestpoint-global_position).normalized()
-			for i in tentacles:
-				rng.randomize()
-				if closestpoint != Vector2(0,0): i.snapHand(closestpoint+Vector2(rng.randf_range(-50,50),rng.randf_range(-50,50)))
 		if movement: launcht = 0
 		launcht+=0.1
 		launcht = clamp(launcht,0,1)
 		launchdir = Vector2(lrdir,uddir).normalized() * 1000
-		var destination = launchpos + Vector2(lrdir,uddir/2).normalized() * 20
-		global_position = global_position.linear_interpolate(destination,launcht)
+		var destination = launchpos + Vector2(-lrdir,-uddir/2).normalized() * 20
+		#global_position = global_position.linear_interpolate(destination,launcht)

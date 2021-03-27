@@ -5,7 +5,7 @@ onready var tentasense = preload("res://preload/tentasense.tscn")
 
 var senses = []
 var resolution = 360
-var radius = 100
+var radius = 200
 
 # Called when the node enters the scene tree for the first time.
 func _ready():

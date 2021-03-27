@@ -42,6 +42,11 @@ enabled = true
 cast_to = Vector2( 0, 100 )
 collision_mask = 2
 
+[node name="ceildetect" type="RayCast2D" parent="vampire"]
+enabled = true
+cast_to = Vector2( 0, -100 )
+collision_mask = 2
+
 [node name="RigidBody2D16" type="RigidBody2D" parent="."]
 position = Vector2( 1.68369, 217.758 )
 collision_layer = 3
