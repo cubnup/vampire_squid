@@ -33,6 +33,10 @@ script = ExtResource( 2 )
 position = Vector2( -0.287132, 0.341877 )
 texture = ExtResource( 3 )
 
+[node name="wings" type="Sprite" parent="vampire/head"]
+scale = Vector2( 0.2, 2 )
+texture = ExtResource( 3 )
+
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="vampire"]
 shape = SubResource( 2 )
 disabled = true
