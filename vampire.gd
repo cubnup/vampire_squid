@@ -35,8 +35,7 @@ var launchdir = Vector2(0,0)
 var lastdir = Vector2(0,0)
 var lastx = 1
 var lasty = 1
-var closestpoint = position
-var closest = position
+var grabbed = false
 
 
 func _ready():
@@ -64,9 +63,9 @@ func _process(delta):
 	if Input.is_action_just_pressed("reload"):get_tree().change_scene(get_tree().current_scene.filename)
 	
 
-	if Input.is_action_just_pressed("jump") and jumpclock == 0 and floordetect.is_colliding(): jumpclock = 100
+	if Input.is_action_just_pressed("jump") and jumpclock == 0 and floordetect.is_colliding() and glideclock == 0: jumpclock = 100
 	if jumpclock > 0: jump()
-	if Input.is_action_just_pressed("jump") and cjumpclock == 0 and ceildetect.is_colliding(): cjumpclock = 100
+	if Input.is_action_just_pressed("jump") and cjumpclock == 0 and ceildetect.is_colliding() and glideclock == 0: cjumpclock = 100
 	if cjumpclock > 0: cjump()
 	
 	if floordetect.is_colliding():
@@ -96,7 +95,16 @@ func _process(delta):
 	velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
 	
 	
+	if Input.is_action_pressed("r2") and glideclock == 0:
+		grab()
+		grabbed = true
+	if Input.is_action_just_released("r2"):
+		grabbed = false
+	
 	wings.scale.y = clamp(wings.scale.y, 0,2)
+	
+	for i in tentacles:
+			velocity+= (i.getHand()-global_position)/1000
 	
 	if move: move()
 	velocity.x = floor(velocity.x)
@@ -175,7 +183,7 @@ func randnearbynocool():
 
 func floorhover():
 	if floordetect.is_colliding() and jumpclock == 0:
-		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up"))*110
+		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up")*2)*110
 		velocity.y = velocity.y*0.8
 		velocity.y -= 50-distance
 		velocity.y *= 0.9
@@ -183,8 +191,8 @@ func floorhover():
 func ceilhover():
 	if ceildetect.is_colliding() and cjumpclock == 0:
 		var moving = true if stepify(abs(velocity.x),10) > 0 or stepify(abs(velocity.y),50) > 0 else false
-		if moving and !launched: randnearby()
-		velocity.y += (Input.get_action_strength("down")-Input.get_action_strength("up")/5)*100
+		#if moving and !launched: randnearby()
+		velocity.y += (Input.get_action_strength("down")*2-Input.get_action_strength("up")/5)*100
 		if cdistance < 50: velocity.y += (50-cdistance)
 		velocity.y += 60 - cdistance
 		velocity.y *= 0.9
@@ -195,17 +203,19 @@ func jump():
 		randnearby()
 		velocity.y = (100-jumpclock)*6
 		if Input.is_action_pressed("jump"): 
-			jumpcharge+=0.1
+			jumpcharge+=0.15
 		if Input.is_action_just_released("jump"): jumpclock = 81
 	elif jumpclock == 80:
 		velocity.y = -600 *jumpcharge
-	elif jumpclock < 50: 
+	elif jumpclock < 70:
+		randmove([-1,1],[-1,1]) 
 		if floordetect.is_colliding(): 
 			if distance < 50: jumpclock = 1
 	if jumpclock == 20: jumpclock = 40
 	jumpclock-=1
 
 func cjump():
+	print(cjumpclock)
 	if cjumpclock == 100: cjumpcharge = 0.3
 	if cjumpclock < 100 and cjumpclock > 80:
 		randnearby()
@@ -215,8 +225,9 @@ func cjump():
 		if Input.is_action_just_released("jump"): cjumpclock = 81
 	elif cjumpclock == 80:
 		velocity.y = 600 *cjumpcharge
-	elif cjumpclock < 50: 
-		if ceildetect.is_colliding(): 
+	elif cjumpclock < 70:
+		randmove([-1,1],[-1,1]) 
+		if floordetect.is_colliding(): 
 			if cdistance < 50: cjumpclock = 1
 	#if cjumpclock == 20: cjumpclock = 40
 	cjumpclock-=1
@@ -225,7 +236,7 @@ func move():
 	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
 	var moving = true if stepify(abs(velocity.x),10) > 0 or stepify(abs(velocity.y),50) > 0 else false
 	if launchcooldown == 0: floorhover()
-	if moving and !launched: randnearby()
+	if moving and !launched and !grabbed: randnearby()
 	velocity.x += lrdir*speed
 	velocity.y += 10
 
@@ -242,7 +253,7 @@ func launch():
 		launcht = clamp(launcht,0,1)
 		launchdir = Vector2(lrdir,uddir).normalized() * 1000
 		var destination = launchpos + Vector2(-lrdir,-uddir/2).normalized() * 20
-		#global_position = global_position.linear_interpolate(destination,launcht)
+		global_position = global_position.linear_interpolate(destination,launcht)
 
 func glide():
 	snap2pos(global_position)
@@ -257,21 +268,27 @@ func glide():
 			velocity.y-=100/distance
 	if glideclock == 80:
 		glideclock-=1
-		velocity = (lastdir).normalized()*2000
+		velocity = (lastdir).normalized()*10000
 		velocity.y *=0.1
 		if velocity.x == 0: glidedir = lastx
 		else: glidedir = velocity.x/abs(velocity.x)
 	if glideclock < 80:
 		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 20 
 		head.look_at(-velocity.normalized()+global_position)
-		ceilhover()
-		floorhover()
-		glideclock -= 0.5
+		#ceilhover()
+		#floorhover()
+		if floordetect.is_colliding(): 
+			velocity.y *= 0.9
+			velocity.y-=20
+		if ceildetect.is_colliding(): 
+			velocity.y *= 0.9
+			velocity.y+=20
+		glideclock -= 0.2
 		velocity.x += abs(lrdir+1) * glidedir * 1000
-		velocity.y += (uddir * 15)
-		if velocity.y<0: glidecharge -=velocity.y/2500
-		velocity.y += 5 + glidecharge
-		velocity.y = clamp(velocity.y,-400,1000)
+		velocity.y += (uddir * 25)
+		if velocity.y<0: glidecharge -=velocity.y/1000
+		velocity.y += glidecharge
+		velocity.y = clamp(velocity.y,-400,2000)
 		if abs(velocity.y) >= 5:
 			if velocity.y < 0: velocity.y+=1
 			if velocity.y > 0: velocity.y-=1
@@ -279,3 +296,23 @@ func glide():
 			glideclock = floor(glideclock)
 			wings.scale.y = glideclock/10
 			velocity.x *= 0.9
+
+func grab():
+	if jumpclock == 0 and cjumpclock == 0:
+		snap2pos(closestpoint())
+		for i in tentacles:
+			velocity+= (i.getHand()-global_position)/10
+		if floordetect.is_colliding(): velocity.y-=100
+		if ceildetect.is_colliding(): velocity.y+=100
+	if jumpclock < 50: jumpclock = 0
+	if cjumpclock < 65: cjumpclock = 0
+
+func closestpoint():
+	var closestpoint = global_position
+	if vars.senspoints != []:
+		var closest = global_position.distance_to(vars.senspoints[0])
+		for i in vars.senspoints:
+			if global_position.distance_to(i) < closest: 
+				closest = global_position.distance_to(i)
+				closestpoint = i
+	return closestpoint
