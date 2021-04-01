@@ -23,9 +23,9 @@ var cjumpclock = 0
 var cjumpcharge = 0
 var glideclock = 0
 var glideangle = 0
-var glidedir = 1
 var glidecharge = 0
-var canglide = true
+var canglide = 2
+var glideamount = 2
 var move = true
 var launchpos = Vector2(0,0)
 var launched = false
@@ -76,11 +76,11 @@ func _process(delta):
 	#launch 
 
 	
-	if Input.is_action_just_pressed("l2") and canglide:
+	if Input.is_action_just_pressed("l2") and canglide > 0:
 		glideclock = 100
 		move = false
 		wings.scale.y = 0
-		canglide = false
+		canglide -= 1
 	if ((Input.is_action_pressed("l2") and glideclock > 0) or glideclock > 0):
 		glide()
 	else:
@@ -88,11 +88,12 @@ func _process(delta):
 	if Input.is_action_just_released("l2") or glideclock == 0:
 		move = true
 	if (floordetect.is_colliding() or ceildetect.is_colliding()) and glideclock < 20:
-		canglide = true
+		canglide = glideamount
 
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))
-	velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
-	velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
+	if glideclock == 0: 
+		velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
+		velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
 	
 	
 	if Input.is_action_pressed("r2") and glideclock == 0:
@@ -183,7 +184,7 @@ func randnearbynocool():
 
 func floorhover():
 	if floordetect.is_colliding() and jumpclock == 0:
-		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up")*2)*110
+		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up")*2)*200
 		velocity.y = velocity.y*0.8
 		velocity.y -= 50-distance
 		velocity.y *= 0.9
@@ -215,7 +216,6 @@ func jump():
 	jumpclock-=1
 
 func cjump():
-	print(cjumpclock)
 	if cjumpclock == 100: cjumpcharge = 0.3
 	if cjumpclock < 100 and cjumpclock > 80:
 		randnearby()
@@ -256,46 +256,42 @@ func launch():
 		global_position = global_position.linear_interpolate(destination,launcht)
 
 func glide():
+	glideclock-=0.5
 	snap2pos(global_position)
 	#randmove([-0.1,0.1],[-0.1,0.1])
 	if glideclock > 80:
 		glidecharge = 0
-		glideclock-=1
+		glideclock-=0.5
 		head.rotation += (2*PI)/20
 		velocity = velocity*0.9
 		wings.scale.y += 0.10
 		if floordetect.is_colliding():
 			velocity.y-=100/distance
 	if glideclock == 80:
-		glideclock-=1
-		velocity = (lastdir).normalized()*10000
-		velocity.y *=0.1
-		if velocity.x == 0: glidedir = lastx
-		else: glidedir = velocity.x/abs(velocity.x)
+		glideangle = 0
+		glidecharge = 1
+		glideclock-=0.5
+		velocity = lastdir * 666
 	if glideclock < 80:
+		glidecharge -= 2e-4
+		head.look_at(velocity.normalized()+head.global_position)
+	if glideclock < 70:
+		velocity *= glidecharge
 		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 20 
-		head.look_at(-velocity.normalized()+global_position)
-		#ceilhover()
-		#floorhover()
-		if floordetect.is_colliding(): 
-			velocity.y *= 0.9
-			velocity.y-=20
-		if ceildetect.is_colliding(): 
-			velocity.y *= 0.9
-			velocity.y+=20
-		glideclock -= 0.2
-		velocity.x += abs(lrdir+1) * glidedir * 1000
-		velocity.y += (uddir * 25)
-		if velocity.y<0: glidecharge -=velocity.y/1000
-		velocity.y += glidecharge
-		velocity.y = clamp(velocity.y,-400,2000)
-		if abs(velocity.y) >= 5:
-			if velocity.y < 0: velocity.y+=1
-			if velocity.y > 0: velocity.y-=1
-		if glideclock < 20:
-			glideclock = floor(glideclock)
-			wings.scale.y = glideclock/10
-			velocity.x *= 0.9
+		glideangle += deg2rad((lrdir-uddir)*10)
+		glideangle = glideangle/2
+		velocity.y += 10
+		velocity = velocity.rotated(glideangle)
+		velocity.x = clamp(velocity.x, -1000, 1000)
+		velocity.y = clamp(velocity.y, -1000, 500)
+		for i in vars.senspoints:
+			velocity += (global_position-i)/1000
+	if glideclock < 20:
+		glideclock = floor(glideclock)
+		wings.scale.y = glideclock/10
+		velocity.x *= 0.9
+		ceilhover()
+		floorhover()
 
 func grab():
 	if jumpclock == 0 and cjumpclock == 0:
