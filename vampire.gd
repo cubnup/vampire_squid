@@ -6,10 +6,11 @@ onready var mucus = preload("res://preload/mucus.tscn")
 onready var vars = get_node("/root/global")
 onready var floordetect = $floordetect
 onready var ceildetect = $ceildetect
-onready var head = $head
-onready var wings = $head/wings
-onready var wingl = $head/wings/wingl
-onready var wingr = $head/wings/wingr
+onready var body = $body
+onready var head = $body/head
+onready var wings = $body/wings
+onready var wingl = $body/wings/wingl
+onready var wingr = $body/wings/wingr
 onready var cape = $cape
 var num_tent = 10
 var tentacles = []
@@ -67,7 +68,7 @@ func _process(delta):
 	lrdir = Input.get_action_strength("right")-Input.get_action_strength("left")
 	uddir = Input.get_action_strength("down")-Input.get_action_strength("up")
 	if glideclock < 80:
-		head.rotation = deg2rad(velocity.x)/10
+		body.rotation = deg2rad(velocity.x)/10
 		
 	if Input.is_action_just_pressed("reload"):get_tree().change_scene(get_tree().current_scene.filename)
 	
@@ -89,16 +90,17 @@ func _process(delta):
 		glideclock = 100
 		move = false
 		wings.scale.y = 0
-		canglide -= 1
+		canglide -= 1 
+		head.rotation = PI/2
 	if ((Input.is_action_pressed("l2") and glideclock > 0) or glideclock > 0):
 		glide()
 	else:
 		glideclock = floor(glideclock*0.6)
-	if Input.is_action_just_released("l2") or glideclock == 0:
+	if Input.is_action_just_released("l2") or glideclock < 20:
 		move = true
 	if vars.senspoints != [] and glideclock < 20:
+		head.rotation = deg2rad(velocity.x/100)
 		canglide = glideamount
-
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))
 	if glideclock == 0: 
 		velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
@@ -109,13 +111,13 @@ func _process(delta):
 		if glideclock < 20:
 			grab()
 			grabbed = true
-		else: glideclock = 20
+		elif vars.senspoints != []: glideclock = 20
 	if Input.is_action_just_released("r2"):
 		grabbed = false
 	
 	
 	print ( mucuscharge)
-	if Input.is_action_pressed("l1") and jumpclock == 0 and cjumpclock == 0 and mucuscharge > 0 and glideclock < 70:
+	if Input.is_action_pressed("l1") and jumpclock < 80 and cjumpclock < 80 and mucuscharge > 0 and glideclock < 70:
 		var mcs = mucus.instance()
 		var mucuspeed = 100 if glideclock > 0 else 20
 		mucuscharge -= 1 if glideclock > 0 else 3
@@ -125,7 +127,7 @@ func _process(delta):
 		get_parent().add_child(mcs)
 	elif Input.is_action_just_released("l1"):
 		mucuscooldown = mucuscdtime
-	elif !Input.is_action_pressed("l1") and mucuscooldown == 0:
+	elif !Input.is_action_pressed("l1") and mucuscooldown == 0 and glideclock < 20:
 		if mucuscharge < maxmucus: mucuscharge += 1
 	if mucuscooldown > 0: mucuscooldown -= 1
 	
@@ -275,7 +277,7 @@ func respawn():
 	global_position = Vector2(0,0)
 
 func launch():
-	head.rotation = launchdir.angle()
+	body.rotation = launchdir.angle()
 	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
 	launched = true
 	if vars.senspoints != []:
@@ -295,7 +297,7 @@ func glide():
 	if glideclock > 80:
 		glidecharge = 0
 		glideclock-=0.5
-		head.rotation += (2*PI)/20
+		body.rotation += (2*PI)/20
 		velocity = velocity*0.9
 		wings.scale.y += 0.10
 		if floordetect.is_colliding():
@@ -304,8 +306,9 @@ func glide():
 		glideangle = 0
 		glideclock-=0.5
 		velocity = lastdir * 666
-	if glideclock < 80:
-		head.look_at(velocity.normalized()+head.global_position)
+	if glideclock < 80 and glideclock > 19: 
+		body.look_at(velocity.normalized()+body.global_position)
+		head.rotation = -body.rotation + deg2rad(velocity.x/20)
 	if glideclock < 70:
 		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 19
 		#glideangle += deg2rad((lrdir-uddir)) 

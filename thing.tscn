@@ -2,10 +2,10 @@
 
 [ext_resource path="res://vampire.gd" type="Script" id=1]
 [ext_resource path="res://scripts/sensor.gd" type="Script" id=2]
-[ext_resource path="res://sprites/square3.png" type="Texture" id=3]
 [ext_resource path="res://icon.png" type="Texture" id=4]
 [ext_resource path="res://sprites/Asset 1.png" type="Texture" id=5]
 [ext_resource path="res://sprites/mucus mucus mucus.png" type="Texture" id=6]
+[ext_resource path="res://sprites/Asset 2.png" type="Texture" id=7]
 
 [sub_resource type="CircleShape2D" id=1]
 
@@ -32,19 +32,18 @@ smoothing_speed = 100.0
 [node name="sensor" type="Node2D" parent="vampire"]
 script = ExtResource( 2 )
 
-[node name="head" type="Sprite" parent="vampire"]
+[node name="body" type="Node2D" parent="vampire"]
 position = Vector2( -0.287132, 0.341877 )
-texture = ExtResource( 3 )
 
-[node name="wings" type="Node2D" parent="vampire/head"]
+[node name="wings" type="Node2D" parent="vampire/body"]
 scale = Vector2( 0.2, 2 )
 z_index = -3
 
-[node name="wingl" type="Node2D" parent="vampire/head/wings"]
+[node name="wingl" type="Node2D" parent="vampire/body/wings"]
 show_behind_parent = true
 z_as_relative = false
 
-[node name="wingl" type="Sprite" parent="vampire/head/wings/wingl"]
+[node name="wingl" type="Sprite" parent="vampire/body/wings/wingl"]
 rotation = -1.5708
 scale = Vector2( 0.01, -0.1 )
 z_index = 1
@@ -52,18 +51,22 @@ z_as_relative = false
 texture = ExtResource( 5 )
 offset = Vector2( 1600, 0 )
 
-[node name="wingr" type="Node2D" parent="vampire/head/wings"]
+[node name="wingr" type="Node2D" parent="vampire/body/wings"]
 show_behind_parent = true
 z_index = 3
 z_as_relative = false
 
-[node name="wingr" type="Sprite" parent="vampire/head/wings/wingr"]
+[node name="wingr" type="Sprite" parent="vampire/body/wings/wingr"]
 rotation = 1.5708
 scale = Vector2( 0.01, 0.1 )
 z_index = 1
 z_as_relative = false
 texture = ExtResource( 5 )
 offset = Vector2( 1600, 0 )
+
+[node name="head" type="Sprite" parent="vampire/body"]
+scale = Vector2( 0.03, 0.03 )
+texture = ExtResource( 7 )
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="vampire"]
 shape = SubResource( 2 )
