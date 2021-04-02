@@ -2,11 +2,15 @@ extends KinematicBody2D
 
 var rng = RandomNumberGenerator.new()
 onready var tentacle = preload("res://preload/tentacle.tscn")
+onready var mucus = preload("res://preload/mucus.tscn")
 onready var vars = get_node("/root/global")
 onready var floordetect = $floordetect
 onready var ceildetect = $ceildetect
 onready var head = $head
 onready var wings = $head/wings
+onready var wingl = $head/wings/wingl
+onready var wingr = $head/wings/wingr
+onready var cape = $cape
 var num_tent = 10
 var tentacles = []
 var velocity = Vector2(0,0)
@@ -25,8 +29,12 @@ var glideclock = 0
 var glideangle = 0
 var glidecharge = 0
 var glidedir
-var canglide = 2
-var glideamount = 2
+var glideamount = 1
+var canglide = glideamount
+var maxmucus = 150
+var mucuscharge = maxmucus
+var mucuscooldown = 0
+var mucuscdtime = 50
 var move = true
 var launchpos = Vector2(0,0)
 var launched = false
@@ -97,11 +105,29 @@ func _process(delta):
 		velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
 	
 	
-	if Input.is_action_pressed("r2") and glideclock == 0:
-		grab()
-		grabbed = true
+	if Input.is_action_pressed("r2"):
+		if glideclock < 20:
+			grab()
+			grabbed = true
+		else: glideclock = 20
 	if Input.is_action_just_released("r2"):
 		grabbed = false
+	
+	
+	print ( mucuscharge)
+	if Input.is_action_pressed("l1") and jumpclock == 0 and cjumpclock == 0 and mucuscharge > 0 and glideclock < 70:
+		var mcs = mucus.instance()
+		var mucuspeed = 100 if glideclock > 0 else 20
+		mucuscharge -= 1 if glideclock > 0 else 3
+		velocity += Vector2(lrdir,uddir) * mucuspeed
+		mcs.position = -velocity/20 + global_position
+		snap2pos(mcs.position)
+		get_parent().add_child(mcs)
+	elif Input.is_action_just_released("l1"):
+		mucuscooldown = mucuscdtime
+	elif !Input.is_action_pressed("l1") and mucuscooldown == 0:
+		if mucuscharge < maxmucus: mucuscharge += 1
+	if mucuscooldown > 0: mucuscooldown -= 1
 	
 	wings.scale.y = clamp(wings.scale.y, 0,2)
 	
@@ -116,6 +142,11 @@ func _process(delta):
 		ceilhover()
 	
 	
+	cape.clear_points()
+	if glideclock == 0:
+		for l in range(tentacles[0].loops - 1):
+			for t in tentacles:
+				cape.add_point(t.arr_loops[l].position)
 
 	move_and_slide(velocity)
 
@@ -193,7 +224,6 @@ func floorhover():
 func ceilhover():
 	if ceildetect.is_colliding() and cjumpclock == 0:
 		var moving = true if stepify(abs(velocity.x),10) > 0 or stepify(abs(velocity.y),50) > 0 else false
-		#if moving and !launched: randnearby()
 		velocity.y += (Input.get_action_strength("down")*2-Input.get_action_strength("up")/5)*100
 		if cdistance < 50: velocity.y += (50-cdistance)
 		velocity.y += 60 - cdistance
@@ -213,6 +243,7 @@ func jump():
 		randmove([-1,1],[-1,1]) 
 		if floordetect.is_colliding(): 
 			if distance < 50: jumpclock = 1
+	if ceildetect.is_colliding(): jumpclock = 1 
 	if jumpclock == 20: jumpclock = 40
 	jumpclock-=1
 
@@ -228,8 +259,7 @@ func cjump():
 		velocity.y = 600 *cjumpcharge
 	elif cjumpclock < 70:
 		randmove([-1,1],[-1,1]) 
-		if floordetect.is_colliding(): 
-			if cdistance < 50: cjumpclock = 1
+		if floordetect.is_colliding(): cjumpclock = 1
 	#if cjumpclock == 20: cjumpclock = 40
 	cjumpclock-=1
 
@@ -259,6 +289,8 @@ func launch():
 func glide():
 	glideclock-=0.5
 	snap2pos(global_position)
+	wingl.rotation = deg2rad(fmod(glideclock,3)-1) *-2
+	wingr.rotation = deg2rad(fmod(glideclock,3)-1) *2
 	#randmove([-0.1,0.1],[-0.1,0.1])
 	if glideclock > 80:
 		glidecharge = 0
@@ -278,17 +310,21 @@ func glide():
 		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 19
 		#glideangle += deg2rad((lrdir-uddir)) 
 		glidedir = Vector2(lrdir,uddir).normalized()
+		glideangle *= .95
 		if glidedir == Vector2(0,0): glideangle /= 2
 		else: glideangle += (velocity.angle_to(glidedir)/500)
 		if glidedir.angle() > 0:
 			velocity /= 0.99
 		else: 
-			velocity *= 0.99
+			velocity *= 0.99*0.99
 		velocity.y += 10
+		if abs(glideangle) < .001: glideangle += 0.01
 		velocity = velocity.rotated(glideangle)
-		velocity = velocity.clamped(1000)
+		velocity = velocity.clamped(500)
 		for i in vars.senspoints:
+			velocity += (global_position-i)/1000
 			glideangle += velocity.angle_to(global_position-i)/100000
+		if glideclock == 30 and Input.is_action_pressed("l2"): glideclock = 60
 	if glideclock < 20:
 		glideclock = floor(glideclock)
 		wings.scale.y = glideclock/10
@@ -301,6 +337,7 @@ func grab():
 		snap2pos(closestpoint())
 		for i in tentacles:
 			velocity+= (i.getHand()-global_position)/10
+			rng.randomize()
 		if floordetect.is_colliding(): velocity.y-=100
 		if ceildetect.is_colliding(): velocity.y+=100
 	if jumpclock < 50: jumpclock = 0
