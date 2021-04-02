@@ -24,6 +24,7 @@ var cjumpcharge = 0
 var glideclock = 0
 var glideangle = 0
 var glidecharge = 0
+var glidedir
 var canglide = 2
 var glideamount = 2
 var move = true
@@ -87,7 +88,7 @@ func _process(delta):
 		glideclock = floor(glideclock*0.6)
 	if Input.is_action_just_released("l2") or glideclock == 0:
 		move = true
-	if (floordetect.is_colliding() or ceildetect.is_colliding()) and glideclock < 20:
+	if vars.senspoints != [] and glideclock < 20:
 		canglide = glideamount
 
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))
@@ -184,7 +185,7 @@ func randnearbynocool():
 
 func floorhover():
 	if floordetect.is_colliding() and jumpclock == 0:
-		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up")*2)*200
+		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up"))*150
 		velocity.y = velocity.y*0.8
 		velocity.y -= 50-distance
 		velocity.y *= 0.9
@@ -269,23 +270,25 @@ func glide():
 			velocity.y-=100/distance
 	if glideclock == 80:
 		glideangle = 0
-		glidecharge = 1
 		glideclock-=0.5
 		velocity = lastdir * 666
 	if glideclock < 80:
-		glidecharge -= 2e-4
 		head.look_at(velocity.normalized()+head.global_position)
 	if glideclock < 70:
-		velocity *= glidecharge
-		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 20 
-		glideangle += deg2rad((lrdir-uddir)*10)
-		glideangle = glideangle/2
+		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 19
+		#glideangle += deg2rad((lrdir-uddir)) 
+		glidedir = Vector2(lrdir,uddir).normalized()
+		if glidedir == Vector2(0,0): glideangle /= 2
+		else: glideangle += (velocity.angle_to(glidedir)/500)
+		if glidedir.angle() > 0:
+			velocity /= 0.99
+		else: 
+			velocity *= 0.99
 		velocity.y += 10
 		velocity = velocity.rotated(glideangle)
-		velocity.x = clamp(velocity.x, -1000, 1000)
-		velocity.y = clamp(velocity.y, -1000, 500)
+		velocity = velocity.clamped(1000)
 		for i in vars.senspoints:
-			velocity += (global_position-i)/1000
+			glideangle += velocity.angle_to(global_position-i)/100000
 	if glideclock < 20:
 		glideclock = floor(glideclock)
 		wings.scale.y = glideclock/10
