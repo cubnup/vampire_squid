@@ -55,7 +55,7 @@ func _ready():
 		self.add_child(tnt)
 	for i in range(num_tent):
 		if i <= num_tent/2: 
-			tentacles[i].get_node("line").default_color = Color(0.8,0,0.1,1)
+			tentacles[i].get_node("line").default_color = Color(0.8,0,0.5,1)
 		#else:
 		#	tentacles[i].get_node("line").default_color = Color(1,0,2.7,1)
 
@@ -98,9 +98,9 @@ func _process(delta):
 		glideclock = floor(glideclock*0.6)
 	if Input.is_action_just_released("l2") or glideclock < 20:
 		move = true
-	if vars.senspoints != [] and glideclock < 20:
+	if glideclock < 20:
 		head.rotation = deg2rad(velocity.x/100)
-		canglide = glideamount
+		if vars.senspoints != []: canglide = glideamount
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))
 	if glideclock == 0: 
 		velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
@@ -128,7 +128,7 @@ func _process(delta):
 	elif Input.is_action_just_released("l1"):
 		mucuscooldown = mucuscdtime
 	elif !Input.is_action_pressed("l1") and mucuscooldown == 0 and glideclock < 20:
-		if mucuscharge < maxmucus: mucuscharge += 1
+		if mucuscharge < maxmucus: mucuscharge += 2
 	if mucuscooldown > 0: mucuscooldown -= 1
 	
 	wings.scale.y = clamp(wings.scale.y, 0,2)
@@ -339,6 +339,7 @@ func grab():
 	if jumpclock == 0 and cjumpclock == 0:
 		snap2pos(closestpoint())
 		for i in tentacles:
+			velocity+= (i.getHand()-global_position)/10
 			velocity+= (i.getHand()-global_position)/10
 			rng.randomize()
 		if floordetect.is_colliding(): velocity.y-=100

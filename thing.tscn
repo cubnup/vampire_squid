@@ -1,21 +1,28 @@
-[gd_scene load_steps=10 format=2]
+[gd_scene load_steps=12 format=2]
 
 [ext_resource path="res://vampire.gd" type="Script" id=1]
 [ext_resource path="res://scripts/sensor.gd" type="Script" id=2]
-[ext_resource path="res://icon.png" type="Texture" id=4]
-[ext_resource path="res://sprites/Asset 1.png" type="Texture" id=5]
+[ext_resource path="res://sprites/Asset 4.png" type="Texture" id=3]
+[ext_resource path="res://sprites/mucus mucus mucus mucus.png" type="Texture" id=4]
+[ext_resource path="res://sprites/Asset 5.png" type="Texture" id=5]
 [ext_resource path="res://sprites/mucus mucus mucus.png" type="Texture" id=6]
-[ext_resource path="res://sprites/Asset 2.png" type="Texture" id=7]
+[ext_resource path="res://preload/testplatform.tscn" type="PackedScene" id=7]
+[ext_resource path="res://sprites/square1.png" type="Texture" id=8]
 
 [sub_resource type="CircleShape2D" id=1]
 
 [sub_resource type="CircleShape2D" id=2]
 radius = 53.2638
 
-[sub_resource type="RectangleShape2D" id=3]
-extents = Vector2( 318.018, 14.5515 )
+[sub_resource type="Curve" id=4]
+_data = [ Vector2( 0, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0 ), 0.0, 0.0, 0, 0 ]
 
 [node name="Node2D" type="Node2D"]
+
+[node name="square1" type="Sprite" parent="."]
+scale = Vector2( 1000, 1000 )
+z_index = -1000
+texture = ExtResource( 8 )
 
 [node name="vampire" type="KinematicBody2D" parent="."]
 z_index = 5
@@ -48,7 +55,7 @@ rotation = -1.5708
 scale = Vector2( 0.01, -0.1 )
 z_index = 1
 z_as_relative = false
-texture = ExtResource( 5 )
+texture = ExtResource( 3 )
 offset = Vector2( 1600, 0 )
 
 [node name="wingr" type="Node2D" parent="vampire/body/wings"]
@@ -61,12 +68,12 @@ rotation = 1.5708
 scale = Vector2( 0.01, 0.1 )
 z_index = 1
 z_as_relative = false
-texture = ExtResource( 5 )
+texture = ExtResource( 3 )
 offset = Vector2( 1600, 0 )
 
 [node name="head" type="Sprite" parent="vampire/body"]
 scale = Vector2( 0.03, 0.03 )
-texture = ExtResource( 7 )
+texture = ExtResource( 5 )
 
 [node name="CollisionShape2D2" type="CollisionShape2D" parent="vampire"]
 shape = SubResource( 2 )
@@ -86,122 +93,66 @@ collision_mask = 2
 show_behind_parent = true
 z_index = -2
 z_as_relative = false
-width = 1.0
-default_color = Color( 0.8, 0, 0.101961, 1 )
+width = 5.0
+width_curve = SubResource( 4 )
+default_color = Color( 0.737255, 0, 0.25098, 1 )
 
 [node name="charged" type="Light2D" parent="vampire"]
 enabled = false
 texture = ExtResource( 6 )
 texture_scale = 0.12
 
-[node name="RigidBody2D16" type="RigidBody2D" parent="."]
-position = Vector2( 1.68369, 217.758 )
-collision_layer = 3
-mode = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D16"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
-
-[node name="icon" type="Sprite" parent="RigidBody2D16"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
+[node name="Light2D" type="Light2D" parent="vampire"]
 texture = ExtResource( 4 )
+energy = 0.5
+shadow_enabled = true
+shadow_filter = 1
+shadow_filter_smooth = 50.0
 
-[node name="RigidBody2D17" type="RigidBody2D" parent="."]
-position = Vector2( 821.684, 251.758 )
-collision_layer = 3
-mode = 1
+[node name="RigidBody2D16" parent="." instance=ExtResource( 7 )]
+position = Vector2( 22.0264, 145.575 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D17"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
+[node name="RigidBody2D17" parent="." instance=ExtResource( 7 )]
+position = Vector2( -458.413, -205.241 )
 
-[node name="icon" type="Sprite" parent="RigidBody2D17"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D18" parent="." instance=ExtResource( 7 )]
+position = Vector2( 609.495, -189.781 )
 
-[node name="RigidBody2D18" type="RigidBody2D" parent="."]
-position = Vector2( -862.316, 211.758 )
-collision_layer = 3
-mode = 1
+[node name="RigidBody2D19" parent="." instance=ExtResource( 7 )]
+position = Vector2( 557.17, 322.767 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D18"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
+[node name="RigidBody2D20" parent="." instance=ExtResource( 7 )]
+position = Vector2( 330.55, -529.972 )
 
-[node name="icon" type="Sprite" parent="RigidBody2D18"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D21" parent="." instance=ExtResource( 7 )]
+position = Vector2( 21.3564, 825.724 )
 
-[node name="RigidBody2D19" type="RigidBody2D" parent="."]
-position = Vector2( 637.684, 1.758 )
-collision_layer = 3
-mode = 1
+[node name="RigidBody2D22" parent="." instance=ExtResource( 7 )]
+position = Vector2( -773.034, 1187.24 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D19"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
+[node name="RigidBody2D23" parent="." instance=ExtResource( 7 )]
+position = Vector2( -701.681, 416.637 )
 
-[node name="icon" type="Sprite" parent="RigidBody2D19"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D24" parent="." instance=ExtResource( 7 )]
+position = Vector2( 554.121, 1320.43 )
 
-[node name="RigidBody2D20" type="RigidBody2D" parent="."]
-position = Vector2( -442.316, 503.758 )
-collision_layer = 3
-mode = 1
+[node name="RigidBody2D25" parent="." instance=ExtResource( 7 )]
+position = Vector2( -283.081, 1662.93 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D20"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
+[node name="RigidBody2D26" parent="." instance=ExtResource( 7 )]
+position = Vector2( 1329.48, 958.915 )
 
-[node name="icon" type="Sprite" parent="RigidBody2D20"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D27" parent="." instance=ExtResource( 7 )]
+position = Vector2( -1567.42, 806.697 )
 
-[node name="RigidBody2D21" type="RigidBody2D" parent="."]
-position = Vector2( -422.316, -152.242 )
-collision_layer = 3
-mode = 1
+[node name="RigidBody2D28" parent="." instance=ExtResource( 7 )]
+position = Vector2( -1510.34, -6.72095 )
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D21"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
+[node name="RigidBody2D29" parent="." instance=ExtResource( 7 )]
+position = Vector2( -1205.91, -663.163 )
 
-[node name="icon" type="Sprite" parent="RigidBody2D21"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D30" parent="." instance=ExtResource( 7 )]
+position = Vector2( 1990.68, 559.342 )
 
-[node name="RigidBody2D22" type="RigidBody2D" parent="."]
-position = Vector2( 461.684, -246.242 )
-collision_layer = 3
-mode = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D22"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
-
-[node name="icon" type="Sprite" parent="RigidBody2D22"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
-
-[node name="RigidBody2D23" type="RigidBody2D" parent="."]
-position = Vector2( 399.684, 559.758 )
-collision_layer = 3
-mode = 1
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="RigidBody2D23"]
-scale = Vector2( 1, 1.06945 )
-shape = SubResource( 3 )
-
-[node name="icon" type="Sprite" parent="RigidBody2D23"]
-position = Vector2( -1.46741, 4.41776 )
-scale = Vector2( -10.125, 0.812903 )
-texture = ExtResource( 4 )
+[node name="RigidBody2D31" parent="." instance=ExtResource( 7 )]
+position = Vector2( 1733.81, 12.3064 )
