@@ -19,7 +19,23 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
 	vars.senspoints = []
+	if Input.is_action_pressed("r2"):
+		pass
+		for i in senses:
+			if i.is_colliding():
+				if i.get_collider() == closestcollider():
+					vars.senspoints.append(i.get_collision_point())
+	else:
+		for i in senses:
+			if i.is_colliding():
+				vars.senspoints.append(i.get_collision_point())
+
+func closestcollider():
+	var closestcollider = null
+	var closest = 201
 	for i in senses:
 		if i.is_colliding():
-			vars.senspoints.append(i.get_collision_point())
-	#if vars.senspoints != []: print(vars.senspoints[0])
+			if global_position.distance_to(i.get_collision_point()) < closest: 
+				closest = global_position.distance_to(i.get_collision_point())
+				closestcollider = i.get_collider()
+	return closestcollider 

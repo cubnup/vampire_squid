@@ -7,14 +7,14 @@
 [ext_resource path="res://sprites/Asset 5.png" type="Texture" id=5]
 [ext_resource path="res://sprites/mucus mucus mucus.png" type="Texture" id=6]
 [ext_resource path="res://preload/testplatform.tscn" type="PackedScene" id=7]
-[ext_resource path="res://sprites/square1.png" type="Texture" id=8]
+[ext_resource path="res://sprites/square2.png" type="Texture" id=8]
 
 [sub_resource type="CircleShape2D" id=1]
 
 [sub_resource type="CircleShape2D" id=2]
 radius = 53.2638
 
-[sub_resource type="Curve" id=4]
+[sub_resource type="Curve" id=3]
 _data = [ Vector2( 0, 1 ), 0.0, 0.0, 0, 0, Vector2( 1, 0 ), 0.0, 0.0, 0, 0 ]
 
 [node name="Node2D" type="Node2D"]
@@ -33,7 +33,6 @@ shape = SubResource( 1 )
 
 [node name="Camera2D" type="Camera2D" parent="vampire"]
 current = true
-smoothing_enabled = true
 smoothing_speed = 100.0
 
 [node name="sensor" type="Node2D" parent="vampire"]
@@ -51,6 +50,7 @@ show_behind_parent = true
 z_as_relative = false
 
 [node name="wingl" type="Sprite" parent="vampire/body/wings/wingl"]
+light_mask = 2
 rotation = -1.5708
 scale = Vector2( 0.01, -0.1 )
 z_index = 1
@@ -64,6 +64,7 @@ z_index = 3
 z_as_relative = false
 
 [node name="wingr" type="Sprite" parent="vampire/body/wings/wingr"]
+light_mask = 2
 rotation = 1.5708
 scale = Vector2( 0.01, 0.1 )
 z_index = 1
@@ -72,6 +73,7 @@ texture = ExtResource( 3 )
 offset = Vector2( 1600, 0 )
 
 [node name="head" type="Sprite" parent="vampire/body"]
+light_mask = 2
 scale = Vector2( 0.03, 0.03 )
 texture = ExtResource( 5 )
 
@@ -94,7 +96,7 @@ show_behind_parent = true
 z_index = -2
 z_as_relative = false
 width = 5.0
-width_curve = SubResource( 4 )
+width_curve = SubResource( 3 )
 default_color = Color( 0.737255, 0, 0.25098, 1 )
 
 [node name="charged" type="Light2D" parent="vampire"]
@@ -102,12 +104,14 @@ enabled = false
 texture = ExtResource( 6 )
 texture_scale = 0.12
 
-[node name="Light2D" type="Light2D" parent="vampire"]
+[node name="light" type="Light2D" parent="vampire"]
+enabled = false
 texture = ExtResource( 4 )
 energy = 0.5
 shadow_enabled = true
+shadow_gradient_length = 10.0
 shadow_filter = 1
-shadow_filter_smooth = 50.0
+shadow_filter_smooth = 64.0
 
 [node name="RigidBody2D16" parent="." instance=ExtResource( 7 )]
 position = Vector2( 22.0264, 145.575 )

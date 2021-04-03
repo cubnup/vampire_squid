@@ -12,6 +12,7 @@ onready var wings = $body/wings
 onready var wingl = $body/wings/wingl
 onready var wingr = $body/wings/wingr
 onready var cape = $cape
+onready var light = $light
 var num_tent = 10
 var tentacles = []
 var velocity = Vector2(0,0)
@@ -98,7 +99,7 @@ func _process(delta):
 		glideclock = floor(glideclock*0.6)
 	if Input.is_action_just_released("l2") or glideclock < 20:
 		move = true
-	if glideclock < 20:
+	if glideclock ==0:
 		head.rotation = deg2rad(velocity.x/100)
 		if vars.senspoints != []: canglide = glideamount
 	if velocity.x != 0: velocity.x = velocity.x - (velocity.x/abs(velocity.x))
@@ -125,8 +126,10 @@ func _process(delta):
 		mcs.position = -velocity/20 + global_position
 		snap2pos(mcs.position)
 		get_parent().add_child(mcs)
+		light.enabled = true
 	elif Input.is_action_just_released("l1"):
 		mucuscooldown = mucuscdtime
+		light.enabled = false
 	elif !Input.is_action_pressed("l1") and mucuscooldown == 0 and glideclock < 20:
 		if mucuscharge < maxmucus: mucuscharge += 2
 	if mucuscooldown > 0: mucuscooldown -= 1
@@ -308,7 +311,7 @@ func glide():
 		velocity = lastdir * 666
 	if glideclock < 80 and glideclock > 19: 
 		body.look_at(velocity.normalized()+body.global_position)
-		head.rotation = -body.rotation + deg2rad(velocity.x/20)
+#		head.rotation = -body.rotation + deg2rad(velocity.x/20)
 	if glideclock < 70:
 		if !Input.is_action_pressed("l2") and glideclock > 20: glideclock = 19
 		#glideangle += deg2rad((lrdir-uddir)) 
@@ -329,6 +332,8 @@ func glide():
 			glideangle += velocity.angle_to(global_position-i)/100000
 		if glideclock == 30 and Input.is_action_pressed("l2"): glideclock = 60
 	if glideclock < 20:
+		body.look_at(velocity.normalized()+body.global_position)
+		body.rotation *= 20/glideclock
 		glideclock = floor(glideclock)
 		wings.scale.y = glideclock/10
 		velocity.x *= 0.9
@@ -342,6 +347,7 @@ func grab():
 			velocity+= (i.getHand()-global_position)/10
 			velocity+= (i.getHand()-global_position)/10
 			rng.randomize()
+		randnearbynocool()
 		if floordetect.is_colliding(): velocity.y-=100
 		if ceildetect.is_colliding(): velocity.y+=100
 	if jumpclock < 50: jumpclock = 0
