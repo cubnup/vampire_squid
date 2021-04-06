@@ -33,6 +33,11 @@ global="*res://scripts/global.gd"
 settings/fps/force_fps=60
 settings/stdout/print_fps=true
 
+[display]
+
+window/stretch/mode="viewport"
+window/stretch/aspect="keep"
+
 [gdnative]
 
 singletons=[ "res://git_api.gdnlib" ]

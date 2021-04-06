@@ -32,6 +32,7 @@ var glideangle = 0
 var glidecharge = 0
 var glidedir
 var glideamount = 1
+var glideflooraversion = 3
 var canglide = glideamount
 var canmucus = true
 var maxmucus = 150
@@ -117,7 +118,8 @@ func _process(delta):
 		grabbed = false
 	
 	#mucus
-	print (mucuscharge)
+	print (mucuscharge, "			", mucuscooldown)
+	if mucuscharge < 0: mucuscharge = 0
 	if canmucus:
 		if Input.is_action_pressed("l1") and jumpclock < 80 and cjumpclock < 80 and mucuscharge > 0 and glideclock < 70:
 			var mcs = mucus.instance()
@@ -138,8 +140,7 @@ func _process(delta):
 		if Input.is_action_just_released("l1"):
 			mucuscooldown = mucuscdtime
 			mucuscharge -= 3
-		if !grabbed and glideclock == 0 and jumpclock == 0 and cjumpclock == 0 and mucuscooldown == 0: 
-			mucuscooldown = 9
+		
 		if !Input.is_action_pressed("l1"):
 			if light.energy > 0.5: light.energy -= 0.05
 			if mucuscooldown == 0:
@@ -148,7 +149,7 @@ func _process(delta):
 				else:
 					if mucuscharge < maxmucus: mucuscharge +=1
 		
-	if mucuscooldown > 0: mucuscooldown -= 1
+		if mucuscooldown > 0: mucuscooldown -= 1
 	
 	wings.scale.y = clamp(wings.scale.y, 0,2)
 	
@@ -364,6 +365,18 @@ func glide():
 		for i in vars.senspoints:
 			velocity += (global_position-i)/1000
 			glideangle += velocity.angle_to(global_position-i)/100000
+		if floordetect.is_colliding():
+			if velocity.angle() > PI/2:
+				velocity = velocity.rotated(deg2rad(glideflooraversion))
+			elif velocity.angle() < PI/2:
+				velocity = velocity.rotated(deg2rad(-glideflooraversion))
+			else: velocity = velocity.rotated(deg2rad(glideflooraversion))
+		if ceildetect.is_colliding():
+			if velocity.angle() > -PI/2:
+				velocity = velocity.rotated(deg2rad(glideflooraversion))
+			elif velocity.angle() < -PI/2:
+				velocity = velocity.rotated(deg2rad(-glideflooraversion))
+			else: velocity = velocity.rotated(deg2rad(glideflooraversion))
 		if glideclock == 30 and Input.is_action_pressed("l2"): glideclock = 60
 		for i in vars.senspoints:
 			velocity -= i/5000
@@ -384,9 +397,14 @@ func grab():
 		velocity+= (i.getHand()-global_position)/10
 		velocity+= (i.getHand()-global_position)/10
 		rng.randomize()
-	randnearbynocool()
-	if floordetect.is_colliding(): velocity.y-=100
-	if ceildetect.is_colliding(): velocity.y+=100
+	for j in vars.senspoints:
+		velocity -= j/5000
+	velocity += Vector2(lrdir,uddir) * 100
+	#randnearbynocool()
+	
+	#randmovenocool([-1,1],[-1,1])
+	#if floordetect.is_colliding(): velocity.y-=100
+	#if ceildetect.is_colliding(): velocity.y+=100
 	if jumpclock < 50: jumpclock = 0
 	if cjumpclock < 65: cjumpclock = 0
 
