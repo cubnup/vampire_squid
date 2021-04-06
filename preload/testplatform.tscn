@@ -6,7 +6,7 @@
 extents = Vector2( 318.018, 14.5515 )
 
 [sub_resource type="OccluderPolygon2D" id=2]
-polygon = PoolVector2Array( -322.739, -17.4803, 319.706, -16.6394, 318.865, 26.2463, -323.58, 25.4054 )
+polygon = PoolVector2Array( -303.956, -9.7977, 308.485, -9.7977, 306.107, 18.7433, -306.335, 16.3649 )
 
 [node name="RigidBody2D16" type="RigidBody2D"]
 collision_layer = 3

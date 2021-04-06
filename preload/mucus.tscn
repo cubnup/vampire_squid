@@ -4,7 +4,7 @@
 [ext_resource path="res://mucusprite.gd" type="Script" id=2]
 [ext_resource path="res://sprites/mucus mucus mucus mucus.png" type="Texture" id=3]
 
-[sub_resource type="PhysicsMaterial" id=3]
+[sub_resource type="PhysicsMaterial" id=1]
 bounce = 5.0
 
 [sub_resource type="CircleShape2D" id=2]
@@ -12,8 +12,10 @@ radius = 4.0
 
 [node name="mucus" type="RigidBody2D"]
 show_behind_parent = true
+z_index = -3
+z_as_relative = false
 mass = 0.00102041
-physics_material_override = SubResource( 3 )
+physics_material_override = SubResource( 1 )
 gravity_scale = 0.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -35,5 +37,6 @@ texture = ExtResource( 1 )
 
 [node name="light3" type="Sprite" parent="mucus bit"]
 modulate = Color( 0, 1, 0.976471, 1 )
+position = Vector2( -5.56183, 0 )
 scale = Vector2( 10, 10 )
 texture = ExtResource( 1 )

@@ -3,7 +3,7 @@
 [ext_resource path="res://vampire.gd" type="Script" id=1]
 [ext_resource path="res://scripts/sensor.gd" type="Script" id=2]
 [ext_resource path="res://sprites/Asset 4.png" type="Texture" id=3]
-[ext_resource path="res://sprites/mucus mucus mucus mucus.png" type="Texture" id=4]
+[ext_resource path="res://sprites/mucus mucus mucus mucus #mucus.png" type="Texture" id=4]
 [ext_resource path="res://sprites/Asset 5.png" type="Texture" id=5]
 [ext_resource path="res://sprites/mucus mucus mucus.png" type="Texture" id=6]
 [ext_resource path="res://preload/testplatform.tscn" type="PackedScene" id=7]
@@ -105,11 +105,12 @@ texture = ExtResource( 6 )
 texture_scale = 0.12
 
 [node name="light" type="Light2D" parent="vampire"]
-enabled = false
 texture = ExtResource( 4 )
+texture_scale = 0.5
+color = Color( 0.568627, 0.635294, 0.890196, 1 )
 energy = 0.5
 shadow_enabled = true
-shadow_gradient_length = 10.0
+shadow_gradient_length = 20.0
 shadow_filter = 1
 shadow_filter_smooth = 64.0
 

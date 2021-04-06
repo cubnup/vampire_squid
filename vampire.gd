@@ -33,6 +33,7 @@ var glidecharge = 0
 var glidedir
 var glideamount = 1
 var canglide = glideamount
+var canmucus = true
 var maxmucus = 150
 var mucuscharge = maxmucus
 var mucuscooldown = 0
@@ -50,6 +51,7 @@ var grabbed = false
 
 
 func _ready():
+	light.enabled = true
 	for i in range(num_tent):
 		var tnt = tentacle.instance()
 		tentacles.append(tnt)
@@ -84,9 +86,7 @@ func _process(delta):
 	if ceildetect.is_colliding():
 		cdistance = global_position.distance_to(ceildetect.get_collision_point())
 	
-	#launch 
-
-	
+	#glide
 	if Input.is_action_just_pressed("l2") and canglide > 0:
 		glideclock = 100
 		move = false
@@ -107,7 +107,7 @@ func _process(delta):
 		velocity.x = clamp(velocity.x,-maxspeed,maxspeed)
 		velocity.y = clamp(velocity.y,-maxspeed*2,maxspeed*2)
 	
-	
+	#grab
 	if Input.is_action_pressed("r2"):
 		if glideclock < 20:
 			grab()
@@ -116,22 +116,38 @@ func _process(delta):
 	if Input.is_action_just_released("r2"):
 		grabbed = false
 	
-	
-	print ( mucuscharge)
-	if Input.is_action_pressed("l1") and jumpclock < 80 and cjumpclock < 80 and mucuscharge > 0 and glideclock < 70:
-		var mcs = mucus.instance()
-		var mucuspeed = 100 if glideclock > 0 else 20
-		mucuscharge -= 1 if glideclock > 0 else 3
-		velocity += Vector2(lrdir,uddir) * mucuspeed
-		mcs.position = -velocity/20 + global_position
-		snap2pos(mcs.position)
-		get_parent().add_child(mcs)
-		light.enabled = true
-	elif Input.is_action_just_released("l1"):
-		mucuscooldown = mucuscdtime
-		light.enabled = false
-	elif !Input.is_action_pressed("l1") and mucuscooldown == 0 and glideclock < 20:
-		if mucuscharge < maxmucus: mucuscharge += 2
+	#mucus
+	print (mucuscharge)
+	if canmucus:
+		if Input.is_action_pressed("l1") and jumpclock < 80 and cjumpclock < 80 and mucuscharge > 0 and glideclock < 70:
+			var mcs = mucus.instance()
+			var mucuspeed = 100 if glideclock > 0 else 0
+			mucuscharge -= 1 if glideclock > 0 else 0
+			velocity += Vector2(lrdir,uddir) * mucuspeed
+			mcs.position = -velocity/20 + global_position
+			if glideclock != 0: snap2pos(mcs.position)
+			get_parent().add_child(mcs)
+			light.energy = 0.5 +  deg2rad (mucuscharge)/ PI 
+			if glideclock == 0 and mucuscharge < maxmucus: mucuscharge += 1
+			if jumpclock > 50 or cjumpclock > 50:
+				move_and_slide(velocity * 1.5)
+				mucuscharge -= 5
+			if grabbed: 
+				move_and_slide(velocity * 1.5)
+				mucuscharge -= 2
+		if Input.is_action_just_released("l1"):
+			mucuscooldown = mucuscdtime
+			mucuscharge -= 3
+		if !grabbed and glideclock == 0 and jumpclock == 0 and cjumpclock == 0 and mucuscooldown == 0: 
+			mucuscooldown = 9
+		if !Input.is_action_pressed("l1"):
+			if light.energy > 0.5: light.energy -= 0.05
+			if mucuscooldown == 0:
+				if glideclock < 20:
+					if mucuscharge < maxmucus: mucuscharge += 2
+				else:
+					if mucuscharge < maxmucus: mucuscharge +=1
+		
 	if mucuscooldown > 0: mucuscooldown -= 1
 	
 	wings.scale.y = clamp(wings.scale.y, 0,2)
@@ -186,6 +202,21 @@ func randmove(xrand,yrand):
 		54: tentacles[4].moveHand(rng_vec)
 		60: tentacles[9].moveHand(rng_vec)
 
+func randmovenocool(xrand,yrand):
+	rng.randomize()
+	rng_vec = Vector2(rng.randf_range(xrand[0],xrand[1]),rng.randf_range(yrand[0],yrand[1])).normalized()
+	rng_vec = rng_vec*100+global_position
+	#if vars.senspoints != []: rng_vec = vars.senspoints[rng.randi_range(0, len(vars.senspoints)-1)]
+#	if vars.tick:
+#		for i in tentacles:
+#			rng.randomize()
+#			i.moveHand()
+	for i in tentacles:
+		rng.randomize()
+		rng_vec = Vector2(rng.randf_range(xrand[0],xrand[1]),rng.randf_range(yrand[0],yrand[1])).normalized()
+		rng_vec = rng_vec*100+global_position
+		i.moveHand(rng_vec)
+
 func randnearby():
 	rng.randomize()
 	if vars.senspoints == [] and !launched: 
@@ -221,7 +252,7 @@ func randnearbynocool():
 
 func floorhover():
 	if floordetect.is_colliding() and jumpclock == 0:
-		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up"))*150
+		velocity.y += (Input.get_action_strength("down")/5-Input.get_action_strength("up"))*80
 		velocity.y = velocity.y*0.8
 		velocity.y -= 50-distance
 		velocity.y *= 0.9
@@ -229,7 +260,7 @@ func floorhover():
 func ceilhover():
 	if ceildetect.is_colliding() and cjumpclock == 0:
 		var moving = true if stepify(abs(velocity.x),10) > 0 or stepify(abs(velocity.y),50) > 0 else false
-		velocity.y += (Input.get_action_strength("down")*2-Input.get_action_strength("up")/5)*100
+		velocity.y += (Input.get_action_strength("down")-Input.get_action_strength("up")/5)*100
 		if cdistance < 50: velocity.y += (50-cdistance)
 		velocity.y += 60 - cdistance
 		velocity.y *= 0.9
@@ -243,6 +274,7 @@ func jump():
 			jumpcharge+=0.15
 		if Input.is_action_just_released("jump"): jumpclock = 81
 	elif jumpclock == 80:
+		randmovenocool([-1,1],[-1,1])
 		velocity.y = -600 *jumpcharge
 	elif jumpclock < 70:
 		randmove([-1,1],[-1,1]) 
@@ -261,6 +293,7 @@ func cjump():
 			cjumpcharge+=0.1
 		if Input.is_action_just_released("jump"): cjumpclock = 81
 	elif cjumpclock == 80:
+		randmovenocool([-1,1],[-1,1])
 		velocity.y = 600 *cjumpcharge
 	elif cjumpclock < 70:
 		randmove([-1,1],[-1,1]) 
@@ -327,10 +360,13 @@ func glide():
 		if abs(glideangle) < .001: glideangle += 0.01
 		velocity = velocity.rotated(glideangle)
 		velocity = velocity.clamped(500)
+		velocity.x += lrdir *10
 		for i in vars.senspoints:
 			velocity += (global_position-i)/1000
 			glideangle += velocity.angle_to(global_position-i)/100000
 		if glideclock == 30 and Input.is_action_pressed("l2"): glideclock = 60
+		for i in vars.senspoints:
+			velocity -= i/5000
 	if glideclock < 20:
 		body.look_at(velocity.normalized()+body.global_position)
 		body.rotation *= 20/glideclock
@@ -341,15 +377,16 @@ func glide():
 		floorhover()
 
 func grab():
-	if jumpclock == 0 and cjumpclock == 0:
-		snap2pos(closestpoint())
-		for i in tentacles:
-			velocity+= (i.getHand()-global_position)/10
-			velocity+= (i.getHand()-global_position)/10
-			rng.randomize()
-		randnearbynocool()
-		if floordetect.is_colliding(): velocity.y-=100
-		if ceildetect.is_colliding(): velocity.y+=100
+	jumpclock = 0
+	cjumpclock = 0
+	snap2pos(closestpoint())
+	for i in tentacles:
+		velocity+= (i.getHand()-global_position)/10
+		velocity+= (i.getHand()-global_position)/10
+		rng.randomize()
+	randnearbynocool()
+	if floordetect.is_colliding(): velocity.y-=100
+	if ceildetect.is_colliding(): velocity.y+=100
 	if jumpclock < 50: jumpclock = 0
 	if cjumpclock < 65: cjumpclock = 0
 
