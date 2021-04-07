@@ -31,6 +31,7 @@ var jumpclock = 0
 var jumpcharge = 0
 var cjumpclock = 0
 var cjumpcharge = 0
+var gjumpclock = 0
 var glideclock = 0
 var glideangle = 0
 var glidecharge = 0
@@ -50,6 +51,7 @@ var launcht = 0
 var launchcooldown = 0
 var launchdir = Vector2(0,0)
 var lastdir = Vector2(0,0)
+var savedir = lastdir
 var lastx = 1
 var lasty = 1
 var grabbed = false
@@ -114,12 +116,18 @@ func _process(delta):
 	
 	#grab
 	if Input.is_action_pressed("r2"):
-		if glideclock < 20 and vars.senspoints != []:
+		if glideclock < 20 and vars.senspoints != [] and gjumpclock == 0:
 			grab()
 			grabbed = true
-		elif vars.senspoints != []: glideclock = 20
+			if Input.is_action_pressed("jump"):
+				gjumpclock = 20
+		elif vars.senspoints != [] and glideclock != 0: glideclock = 20
 	if Input.is_action_just_released("r2"):
 		grabbed = false
+	if gjumpclock > 0: 
+		gjump()
+		gjumpclock -= 1
+	if gjumpclock < 0: gjumpclock = 0
 	
 	#mucus
 	if mucuscharge < 0: mucuscharge = 0
@@ -304,6 +312,29 @@ func cjump():
 		if floordetect.is_colliding(): cjumpclock = 1
 	#if cjumpclock == 20: cjumpclock = 40
 	cjumpclock-=1
+
+func gjump():
+	
+	if gjumpclock == 20: 
+		randnearbynocool()
+	if gjumpclock > 10: 
+		velocity += Vector2(lrdir,uddir+1) * 100
+		velocity *= .95
+		for i in tentacles:
+			velocity+= (i.getHand()-global_position)/20
+#		if Input.is_action_pressed("jump"): gjumpclock = 19
+		if Input.is_action_just_released("jump") and Input.is_action_just_released("r2"): gjumpclock = 10
+	if gjumpclock == 10:
+		savedir = Vector2(0,0)
+		body.rotation = 0
+		savedir = lastdir
+	if gjumpclock < 10:
+		velocity += savedir * 50 * (gjumpclock)
+		gjumpclock += 0.5
+	if floordetect.is_colliding(): velocity.y-=50
+	if ceildetect.is_colliding(): velocity.y+=50
+	if wallldetect.is_colliding(): velocity.x+=50
+	if wallrdetect.is_colliding(): velocity.x-=50
 
 func move():
 	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
