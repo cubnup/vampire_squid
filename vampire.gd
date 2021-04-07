@@ -6,6 +6,9 @@ onready var mucus = preload("res://preload/mucus.tscn")
 onready var vars = get_node("/root/global")
 onready var floordetect = $floordetect
 onready var ceildetect = $ceildetect
+onready var wallldetect = $wallldetect
+onready var wallrdetect = $wallrdetect
+onready var sensor = $sensor
 onready var body = $body
 onready var head = $body/head
 onready var wings = $body/wings
@@ -21,6 +24,7 @@ var speed = 20
 var maxspeed = 300
 var lrdir = Input.get_action_strength("right")-Input.get_action_strength("left")
 var uddir = Input.get_action_strength("down")-Input.get_action_strength("up")
+var gravity = true
 var distance = 1
 var cdistance = 1
 var jumpclock = 0
@@ -110,7 +114,7 @@ func _process(delta):
 	
 	#grab
 	if Input.is_action_pressed("r2"):
-		if glideclock < 20:
+		if glideclock < 20 and vars.senspoints != []:
 			grab()
 			grabbed = true
 		elif vars.senspoints != []: glideclock = 20
@@ -118,7 +122,6 @@ func _process(delta):
 		grabbed = false
 	
 	#mucus
-	print (mucuscharge, "			", mucuscooldown)
 	if mucuscharge < 0: mucuscharge = 0
 	if canmucus:
 		if Input.is_action_pressed("l1") and jumpclock < 80 and cjumpclock < 80 and mucuscharge > 0 and glideclock < 70:
@@ -243,7 +246,7 @@ func randnearbynocool():
 	rng.randomize()
 	if vars.senspoints == [] or !floordetect.is_colliding(): 
 		for i in tentacles:
-			i.snapHand(global_position)
+			i.moveHand(global_position)
 	var magnitude = 1
 	if vars.senspoints != []: 
 		
@@ -308,7 +311,7 @@ func move():
 	if launchcooldown == 0: floorhover()
 	if moving and !launched and !grabbed: randnearby()
 	velocity.x += lrdir*speed
-	velocity.y += 10
+	if gravity: velocity.y += 10
 
 func respawn():
 	global_position = Vector2(0,0)
@@ -390,6 +393,24 @@ func glide():
 		floorhover()
 
 func grab():
+	var movement = true if(Input.is_action_pressed("right") or Input.is_action_pressed("left") or Input.is_action_pressed("down") or Input.is_action_pressed("up")) else false
+	if false:
+		jumpclock = 0
+		cjumpclock = 0
+		snap2pos(closestpoint())
+		for i in tentacles:
+			velocity+= (i.getHand()-global_position)/10
+			velocity+= (i.getHand()-global_position)/10
+			velocity+= (i.getHand()-global_position)/10
+		velocity += Vector2(lrdir,uddir) * 40
+		velocity *= 0.99
+		randnearbynocool()
+		if !movement: velocity *= 0.9
+		#randmovenocool([-1,1],[-1,1])
+		#if floordetect.is_colliding(): velocity.y-=100
+		#if ceildetect.is_colliding(): velocity.y+=100
+		if jumpclock < 50: jumpclock = 0
+		if cjumpclock < 65: cjumpclock = 0
 	jumpclock = 0
 	cjumpclock = 0
 	snap2pos(closestpoint())
@@ -397,14 +418,16 @@ func grab():
 		velocity+= (i.getHand()-global_position)/10
 		velocity+= (i.getHand()-global_position)/10
 		rng.randomize()
+		i.moveHand(Vector2(rng.randf_range(-50,50),rng.randf_range(-50,50))+closestpoint())
 	for j in vars.senspoints:
 		velocity -= j/5000
-	velocity += Vector2(lrdir,uddir) * 100
-	#randnearbynocool()
 	
-	#randmovenocool([-1,1],[-1,1])
-	#if floordetect.is_colliding(): velocity.y-=100
-	#if ceildetect.is_colliding(): velocity.y+=100
+	if floordetect.is_colliding(): velocity.y-=100
+	if ceildetect.is_colliding(): velocity.y+=100
+	if wallldetect.is_colliding(): velocity.x+=100
+	if wallrdetect.is_colliding(): velocity.x-=100
+	if !movement: velocity *= 0.9
+	velocity += Vector2(lrdir,uddir) * 100
 	if jumpclock < 50: jumpclock = 0
 	if cjumpclock < 65: cjumpclock = 0
 
